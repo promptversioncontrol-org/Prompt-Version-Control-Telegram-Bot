@@ -1,0 +1,173 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-py"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  username      String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  sshKeys       SshKey[]
+  workspacesOwned Workspace[]
+  contributions WorkspaceContributor[]
+  twoFactorEnabled Boolean? @default(false)
+  twoFactor        TwoFactor?
+
+  telegramTokens TelegramToken[]
+  userTelegrams UserTelegram[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model TwoFactor {
+  id          String @id
+  secret      String
+  backupCodes String
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId])
+  @@map("two_factor")
+}
+
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String   @unique   
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@map("verification")
+}
+
+model SshKey {
+  id          String   @id @default(cuid())
+  name        String?
+  publicKey   String
+  fingerprint String   @unique
+  createdAt   DateTime @default(now())
+  
+  userId      String
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ssh_key")
+}
+
+
+
+model WorkspaceContributor {
+  id        String   @id @default(cuid())
+  role      String   @default("contributor") // owner, maintainer, contributor
+  addedAt   DateTime @default(now())
+
+  workspaceId String
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String?
+  slug        String   @default("workspace")
+  createdAt   DateTime @default(now())
+  visibility  String   @default("public") 
+  description String?
+  
+  
+  userId      String
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributors WorkspaceContributor[]
+  securityRules SecurityRule[]
+
+  @@unique([userId, slug])
+  @@map("workspace")
+}
+
+model SecurityRule {
+  id          String   @id @default(cuid())
+  pattern     String   // e.g. "node_modules", "*.env"
+  category    String?  // "Folders", "Files"
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("security_rule")
+} 
+
+
+model TelegramToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
+
+model UserTelegram {
+  id       String   @id @default(cuid())
+  chatId   String   @unique
+  userId   String   @unique
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
