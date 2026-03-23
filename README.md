@@ -2,7 +2,7 @@
 
 # 🤖 Prompt Version Control – Telegram Bot
 
-**Prompt-Version-Control-Telegram-Bot** is a lightweight Python service that connects the PVC web application with a Telegram bot to deliver **real-time security alerts and notifications**.
+Prompt-Version-Control-Telegram-Bot is a lightweight Python service that connects the PVC web application with a Telegram bot to deliver **real-time security alerts and notifications**.
 
 It enables instant communication between the PVC system and users (e.g. managers, team leads), especially in situations involving **sensitive data exposure**.
 
